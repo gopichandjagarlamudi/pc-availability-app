@@ -20,17 +20,65 @@ export async function getMyProfile(userId) {
 
 export async function ensureProfile({ userId, fullName }) {
   const client = requireSupabase();
-  const existing = await getMyProfile(userId);
-  if (existing) return existing;
-
   const { data: userData } = await client.auth.getUser();
   const roleFromJwt = userData?.user?.app_metadata?.role;
+  const email = userData?.user?.email || '';
+  const normalizedEmail = email ? normalizeEmail(email) : '';
+
+  const existing = await getMyProfile(userId);
+  if (existing) {
+    if (roleFromJwt !== 'manager' && normalizedEmail) {
+      try {
+        const { data: allowRow } = await client
+          .from('rep_allowlist')
+          .select('full_name')
+          .eq('email', normalizedEmail)
+          .maybeSingle();
+
+        const allowFullName = allowRow?.full_name?.trim();
+        const existingName = String(existing.full_name || '').trim().toLowerCase();
+
+        if (allowFullName && existingName === normalizedEmail && allowFullName !== existing.full_name) {
+          const { data, error } = await client
+            .from('profiles')
+            .update({ full_name: allowFullName })
+            .eq('id', userId)
+            .select('id, full_name, role')
+            .single();
+
+          if (!error && data) return data;
+        }
+      } catch {
+        // Ignore allowlist lookup/update issues; fall back to existing profile.
+      }
+    }
+    return existing;
+  }
+
+  let profileFullName = fullName;
+
+  if (roleFromJwt !== 'manager' && normalizedEmail) {
+    try {
+      const { data: allowRow } = await client
+        .from('rep_allowlist')
+        .select('full_name')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
+
+      const allowFullName = allowRow?.full_name?.trim();
+      if (allowFullName) profileFullName = allowFullName;
+    } catch {
+      // Ignore allowlist lookup issues; fall back to provided name/email.
+    }
+  }
+
+  if (!profileFullName) profileFullName = normalizedEmail || email || 'User';
 
   const { data, error } = await client
     .from('profiles')
     .insert({
       id: userId,
-      full_name: fullName,
+      full_name: profileFullName,
       role: roleFromJwt === 'manager' ? 'manager' : 'rep'
     })
     .select('id, full_name, role')
@@ -163,13 +211,15 @@ export async function upsertRepAllowlist({ email, fullName, homeAddress, employm
   const normalizedStatus = status ? String(status).trim().toLowerCase() : 'active';
   const normalizedEmploymentType = employmentType ? String(employmentType).trim().toLowerCase() : '';
   if (!normalizedEmploymentType) throw new Error('employment_type is required');
+  const normalizedFullName = fullName ? String(fullName).trim() : '';
+  if (!normalizedFullName) throw new Error('full_name is required');
 
   const { data, error } = await client
     .from('rep_allowlist')
     .upsert(
       {
         email: normalizedEmail,
-        full_name: fullName?.trim() || null,
+        full_name: normalizedFullName,
         home_address: homeAddress?.trim() || null,
         home_lat: typeof homeLat === 'number' ? homeLat : null,
         home_lng: typeof homeLng === 'number' ? homeLng : null,

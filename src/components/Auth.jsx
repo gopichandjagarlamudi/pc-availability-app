@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import { normalizeEmail } from '../utils/normalizeEmail';
+import '../styles/auth.css';
 
 export default function Auth({ onAuthed, initialError = '' }) {
   const [portal, setPortal] = useState('rep'); // rep | manager
   const [mode, setMode] = useState('sign_in'); // sign_in | sign_up
-  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(initialError);
 
@@ -19,10 +21,19 @@ export default function Auth({ onAuthed, initialError = '' }) {
     [portal]
   );
 
+  const isSuccessMessage = useMemo(() => {
+    const message = String(error || '').trim().toLowerCase();
+    return message.startsWith('account created');
+  }, [error]);
+
   useEffect(() => {
     // Managers can only be created/administered in Supabase; no self-signup.
     if (portal === 'manager' && mode === 'sign_up') setMode('sign_in');
   }, [portal, mode]);
+
+  useEffect(() => {
+    setConfirmPassword('');
+  }, [mode, portal]);
 
   useEffect(() => {
     if (initialError) setError(initialError);
@@ -56,17 +67,14 @@ export default function Auth({ onAuthed, initialError = '' }) {
         return;
       }
 
-      if (!fullName.trim()) {
-        setError('Please enter your name');
+      if (!password || password !== confirmPassword) {
+        setError('Passwords do not match');
         return;
       }
 
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: normalizedEmail,
-        password,
-        options: {
-          data: { full_name: fullName.trim() }
-        }
+        password
       });
       if (signUpError) throw signUpError;
 
@@ -90,124 +98,198 @@ export default function Auth({ onAuthed, initialError = '' }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pc-light to-white flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">PC Financial Availability</h1>
-        <p className="text-gray-600 mb-2">{subtitle}</p>
-        <p className="text-gray-600 mb-6">{title}</p>
+    <div className="auth-page">
+      <div className="auth-card auth-animate-in" style={{ animationDelay: '0s' }}>
+        <h1 className="auth-title auth-animate-in" style={{ animationDelay: '0s' }}>
+          PC Financial Availability
+        </h1>
+        <p className="auth-tagline auth-animate-in" style={{ animationDelay: '0.1s' }}>
+          {subtitle}
+        </p>
+        <p className="auth-mode auth-animate-in" style={{ animationDelay: '0.15s' }}>
+          {title}
+        </p>
 
-        <div className="mb-6">
-          <div className="grid grid-cols-2 rounded-xl overflow-hidden border border-gray-200">
-            <button
-              type="button"
-              onClick={() => setPortal('rep')}
-              disabled={submitting}
-              className={`py-3 font-bold transition ${
-                portal === 'rep' ? 'bg-pc-blue text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Rep
-            </button>
-            <button
-              type="button"
-              onClick={() => setPortal('manager')}
-              disabled={submitting}
-              className={`py-3 font-bold transition ${
-                portal === 'manager' ? 'bg-pc-blue text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Manager
-            </button>
-          </div>
-          {portal === 'manager' && (
-            <p className="mt-2 text-xs text-gray-500">
-              Requires a manager account (role set in Supabase `app_metadata`).
-            </p>
-          )}
+        <div className="auth-tabs auth-animate-in" style={{ animationDelay: '0.2s' }}>
+          <button
+            type="button"
+            onClick={() => setPortal('rep')}
+            disabled={submitting}
+            className={`auth-tab ${portal === 'rep' ? 'is-active' : ''}`}
+            aria-label="Select role: Representative"
+          >
+            Rep
+          </button>
+          <button
+            type="button"
+            onClick={() => setPortal('manager')}
+            disabled={submitting}
+            className={`auth-tab ${portal === 'manager' ? 'is-active' : ''}`}
+            aria-label="Select role: Manager"
+          >
+            Manager
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === 'sign_up' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Full name</label>
+        {portal === 'manager' && (
+          <p className="auth-hint auth-animate-in" style={{ animationDelay: '0.25s' }}>
+            Requires a manager account (role set in Supabase <code>app_metadata</code>).
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="auth-form auth-animate-in" style={{ animationDelay: '0.3s' }}>
+          <div>
+            <label className="auth-label">Email</label>
+            <div className="auth-input-wrap">
+              <svg className="auth-input-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M2.94 6.34A2 2 0 014 5h12a2 2 0 011.06.34L10 10.19 2.94 6.34z" />
+                <path d="M18 8.07l-7.4 4.53a1 1 0 01-1.2 0L2 8.07V13a2 2 0 002 2h12a2 2 0 002-2V8.07z" />
+              </svg>
               <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-pc-blue focus:outline-none"
-                autoComplete="name"
-                placeholder="Jane Doe"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`auth-input ${error && !isSuccessMessage ? 'is-error' : ''}`}
+                autoComplete="email"
+                placeholder="you@company.com"
                 disabled={submitting}
+                required
+                aria-label="Email address"
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="auth-label">Password</label>
+            <div className="auth-input-wrap">
+              <svg className="auth-input-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  fillRule="evenodd"
+                  d="M5 8a5 5 0 0110 0v1h1a1 1 0 011 1v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a1 1 0 011-1h1V8zm2 1h6V8a3 3 0 10-6 0v1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`auth-input ${error && !isSuccessMessage ? 'is-error' : ''}`}
+                autoComplete={mode === 'sign_in' ? 'current-password' : 'new-password'}
+                disabled={submitting}
+                required
+                aria-label="Password"
+              />
+              <button
+                type="button"
+                className="auth-toggle"
+                onClick={() => setShowPassword((v) => !v)}
+                disabled={submitting}
+                aria-label="Toggle password visibility"
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path
+                      fillRule="evenodd"
+                      d="M3.172 3.172a.75.75 0 011.06 0l12.596 12.596a.75.75 0 11-1.06 1.06l-2.22-2.22A8.71 8.71 0 0110 15.5c-4.93 0-8.56-4.19-8.56-4.19a.75.75 0 010-.94A15.68 15.68 0 015.04 6.8L3.172 4.232a.75.75 0 010-1.06zm3.017 4.078A14.2 14.2 0 003.07 10c.93 1.01 3.85 3.5 6.93 3.5a7.2 7.2 0 002.13-.33l-1.46-1.46a2.5 2.5 0 01-3.38-3.38l-1.101-1.101zM14.99 12.93l-1.64-1.64a2.5 2.5 0 00-3.64-3.64L8.17 6.01A7.2 7.2 0 0110 5.5c4.93 0 8.56 4.19 8.56 4.19a.75.75 0 010 .94 15.68 15.68 0 01-3.57 3.31z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M10 5.5c-4.93 0-8.56 4.19-8.56 4.19a.75.75 0 000 .94S5.07 15.5 10 15.5s8.56-4.19 8.56-4.19a.75.75 0 000-.94S14.93 5.5 10 5.5zm0 8a3.5 3.5 0 110-7 3.5 3.5 0 010 7z" />
+                    <path d="M10 8.25a1.75 1.75 0 100 3.5 1.75 1.75 0 000-3.5z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {mode === 'sign_up' && portal === 'rep' && (
+            <div>
+              <label className="auth-label">Confirm password</label>
+              <div className="auth-input-wrap">
+                <svg className="auth-input-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M5 8a5 5 0 0110 0v1h1a1 1 0 011 1v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a1 1 0 011-1h1V8zm2 1h6V8a3 3 0 10-6 0v1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={`auth-input ${error && !isSuccessMessage ? 'is-error' : ''}`}
+                  autoComplete="new-password"
+                  disabled={submitting}
+                  required
+                  aria-label="Confirm password"
+                />
+              </div>
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-pc-blue focus:outline-none"
-              autoComplete="email"
-              placeholder="you@company.com"
-              disabled={submitting}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-pc-blue focus:outline-none"
-              autoComplete={mode === 'sign_in' ? 'current-password' : 'new-password'}
-              disabled={submitting}
-              required
-            />
-          </div>
-
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
-              {error}
+            <div className={`auth-alert ${isSuccessMessage ? 'auth-alert--success' : 'auth-alert--error'}`} role="alert">
+              {isSuccessMessage ? (
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 102 0V7a1 1 0 00-1-1zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
+              <div>{error}</div>
             </div>
           )}
 
           <button
             type="submit"
             disabled={submitting}
-            className={`w-full py-3 rounded-xl font-bold text-white shadow-lg transition ${
-              submitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-pc-blue hover:bg-pc-dark'
-            }`}
+            className="auth-submit"
+            aria-label={title}
           >
-            {submitting ? 'Please wait...' : title}
+            <span className="inline-flex items-center justify-center gap-2">
+              {submitting && <span className="auth-spinner" aria-hidden="true" />}
+              {submitting ? (mode === 'sign_in' ? 'Signing in...' : 'Creating...') : title}
+            </span>
           </button>
         </form>
 
-        <div className="mt-6 text-sm text-gray-600 text-center">
+        <div className="auth-footer auth-animate-in" style={{ animationDelay: '0.5s' }}>
           {portal === 'manager' ? (
-            <p className="text-xs text-gray-500">No manager sign-up. Use an admin-created manager account.</p>
+            <p>No manager sign-up. Use an admin-created manager account.</p>
           ) : mode === 'sign_in' ? (
             <>
-              No account?{' '}
+              No account?
               <button
-                className="text-pc-blue font-medium hover:underline"
+                className="auth-link"
                 onClick={() => setMode('sign_up')}
                 disabled={submitting}
                 type="button"
+                aria-label="Go to account creation page"
               >
                 Create one
               </button>
             </>
           ) : (
             <>
-              Have an account?{' '}
+              Have an account?
               <button
-                className="text-pc-blue font-medium hover:underline"
+                className="auth-link"
                 onClick={() => setMode('sign_in')}
                 disabled={submitting}
                 type="button"
+                aria-label="Sign in"
               >
                 Sign in
               </button>

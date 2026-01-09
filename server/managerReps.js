@@ -65,6 +65,7 @@ async function handleUpsertRep({ authorizationHeader, body, isBase64Encoded }) {
     if (!email || !email.includes('@')) return { statusCode: 400, json: { error: 'Valid email is required' } };
 
     const fullName = String(payload?.full_name || payload?.fullName || '').trim() || null;
+    if (!fullName) return { statusCode: 400, json: { error: 'full_name is required' } };
     const homeAddress = String(payload?.home_address || payload?.homeAddress || '').trim() || null;
     const employmentTypeRaw = String(payload?.employment_type || payload?.employmentType || '').trim().toLowerCase();
     if (!employmentTypeRaw) return { statusCode: 400, json: { error: 'employment_type is required' } };

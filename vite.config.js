@@ -12,8 +12,8 @@ export default defineConfig({
         name: 'PC Financial Availability',
         short_name: 'PC Availability',
         description: 'Submit your availability for PC Financial locations',
-        theme_color: '#0066cc',
-        background_color: '#ffffff',
+        theme_color: '#4F6D7A',
+        background_color: '#FBFAF7',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

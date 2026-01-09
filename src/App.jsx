@@ -190,7 +190,7 @@ function App() {
 
   if (!apiReady) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-pc-light to-white flex items-center justify-center">
+      <div className="min-h-screen bg-pc-light flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-300 border-t-pc-blue mb-4"></div>
           <p className="text-gray-600 font-medium">Loading...</p>
@@ -217,8 +217,8 @@ function App() {
       {effectiveView === 'rep' ? (
         <>
           {portalError && (
-            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-              <p className="text-sm text-yellow-800">{portalError}</p>
+            <div className="bg-white border-l-4 border-pc-blue p-4 rounded-r-lg shadow-md">
+              <p className="text-sm text-gray-700">{portalError}</p>
             </div>
           )}
           <RepForm
@@ -232,8 +232,8 @@ function App() {
           {supabaseMode ? (
             <button
               onClick={() => supabase.auth.signOut()}
-              className="fixed bottom-6 right-6 px-5 py-3 bg-white text-pc-blue border-2 border-pc-blue rounded-xl shadow-lg hover:bg-pc-light transition font-bold"
-              aria-label="Sign Out"
+              className="fixed top-6 right-6 ra-signout"
+              aria-label="Sign out"
             >
               Sign out
             </button>
