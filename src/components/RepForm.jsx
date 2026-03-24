@@ -33,6 +33,8 @@ export default function RepForm({ repNames, repName, repEmail, userId }) {
   const collectionDates = getCollectionDates();
   const deadline = getSubmissionDeadline();
   const nextOpenDate = getNextSubmissionOpenDate();
+  const selectedCount = Object.values(availability).filter(Boolean).length;
+  const totalCount = collectionDates.length;
 
   useEffect(() => {
     setIsLocked(lockDisabled ? false : isSubmissionLocked());
@@ -233,6 +235,7 @@ export default function RepForm({ repNames, repName, repEmail, userId }) {
         )}
         {/* Header */}
         <div className="ra-header mb-5 ra-animate-in" style={{ animationDelay: lockDisabled ? '0.05s' : '0s' }}>
+          <div className="ra-kicker">Availability Collection</div>
           <h1 className="ra-h1">PC Financial Availability</h1>
           <p className="ra-subtitle">
             Submit your availability for Week {collectionPeriod.weekNumbers[0]}-{collectionPeriod.weekNumbers[1]}
@@ -240,10 +243,19 @@ export default function RepForm({ repNames, repName, repEmail, userId }) {
           <p className="ra-date-range">{formatDateFull(collectionPeriod.start)} - {formatDateFull(collectionPeriod.end)}</p>
         </div>
 
-        {/* Deadline Notice */}
-        <div className="ra-info-card ra-info-card--deadline mb-5 ra-animate-in" style={{ animationDelay: '0.1s' }}>
-          <p className="ra-info-label">Deadline</p>
-          <p className="ra-info-value">{formatDateFull(deadline)} at 11:59 PM</p>
+        <div className="ra-summary-grid mb-5 ra-animate-in" style={{ animationDelay: '0.1s' }}>
+          <div className="ra-info-card ra-info-card--deadline">
+            <p className="ra-info-label">Deadline</p>
+            <p className="ra-info-value">{formatDateFull(deadline)} at 11:59 PM</p>
+          </div>
+          <div className="ra-info-card ra-info-card--metric">
+            <p className="ra-info-label">Days Selected</p>
+            <p className="ra-info-value ra-info-value--metric">{selectedCount} / {totalCount}</p>
+          </div>
+          <div className="ra-info-card ra-info-card--metric">
+            <p className="ra-info-label">Availability Window</p>
+            <p className="ra-info-value">08:00 - 20:00</p>
+          </div>
         </div>
 
         {/* Rep Selection */}
@@ -295,29 +307,42 @@ export default function RepForm({ repNames, repName, repEmail, userId }) {
         {selectedRep && (
           <form onSubmit={handleSubmit}>
             {/* Quick Actions */}
-            <div className="ra-actions mb-6 ra-animate-in" style={{ animationDelay: '0.3s' }}>
-              <button
-                type="button"
-                onClick={selectAllAvailable}
-                className="ra-btn ra-btn-primary flex-1"
-                aria-label="Toggle all days as available"
-              >
-                All Available
-              </button>
-              <button
-                type="button"
-                onClick={selectAllUnavailable}
-                className="ra-btn ra-btn-outline flex-1"
-                aria-label="Toggle all days as unavailable"
-              >
-                All Unavailable
-              </button>
+            <div className="ra-toolbar mb-6 ra-animate-in" style={{ animationDelay: '0.3s' }}>
+              <div>
+                <p className="ra-toolbar-label">Quick actions</p>
+                <h2 className="ra-toolbar-title">Set your week faster</h2>
+              </div>
+              <div className="ra-actions">
+                <button
+                  type="button"
+                  onClick={selectAllAvailable}
+                  className="ra-btn ra-btn-primary flex-1"
+                  aria-label="Toggle all days as available"
+                >
+                  All Available
+                </button>
+                <button
+                  type="button"
+                  onClick={selectAllUnavailable}
+                  className="ra-btn ra-btn-outline flex-1"
+                  aria-label="Toggle all days as unavailable"
+                >
+                  Clear All
+                </button>
+              </div>
             </div>
 
             {/* Date Selection */}
             <div className="ra-info-card mb-6 ra-animate-in" style={{ animationDelay: '0.35s' }}>
-              <h2 className="ra-section-title">Select Available Days</h2>
-              <p className="ra-helper mb-4">Available = 08:00 - 20:00 (automatic)</p>
+              <div className="ra-section-head">
+                <div>
+                  <h2 className="ra-section-title">Select Available Days</h2>
+                  <p className="ra-helper">Available = 08:00 - 20:00 (automatic)</p>
+                </div>
+                <div className="ra-selection-pill" aria-live="polite">
+                  {selectedCount} {selectedCount === 1 ? 'day' : 'days'} selected
+                </div>
+              </div>
               <div className="space-y-3">
                 {collectionDates.map((date, index) => {
                   const dateStr = formatDateStorage(date);
@@ -351,7 +376,7 @@ export default function RepForm({ repNames, repName, repEmail, userId }) {
                         </div>
                         <div>
                           <p className="ra-day-title">{formatDateDisplay(date)}</p>
-                          <p className="ra-day-time">08:00 - 20:00</p>
+                          <p className="ra-day-time">Standard shift window: 08:00 - 20:00</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
