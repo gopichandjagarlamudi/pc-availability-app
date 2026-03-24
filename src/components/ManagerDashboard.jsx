@@ -96,6 +96,17 @@ export default function ManagerDashboard({ repNames, onBackToRep }) {
     }
   };
 
+  const getSupabasePublicHeaders = () => {
+    const headers = {};
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (supabaseUrl) headers['X-Supabase-Url'] = supabaseUrl;
+    if (supabaseAnonKey) headers['X-Supabase-Anon-Key'] = supabaseAnonKey;
+
+    return headers;
+  };
+
   const addToAllowlist = async (e) => {
     e.preventDefault();
     setAllowInfo('');
@@ -134,7 +145,8 @@ export default function ManagerDashboard({ repNames, onBackToRep }) {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            ...getSupabasePublicHeaders()
           },
           body: JSON.stringify({
             email,
@@ -299,7 +311,10 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
 
       const response = await fetch(endpoint, {
         method: 'GET',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...getSupabasePublicHeaders()
+        }
       });
 
       if (!response.ok) {
@@ -398,7 +413,7 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
     <div className="manager-dashboard min-h-screen">
       <div className="max-w-4xl mx-auto pb-24 p-[var(--md-page-pad)] md-shell">
         {!isSupabaseConfigured() && !isGoogleSheetsConfigured() && (
-          <div className="md-card mb-[var(--md-section-gap)] border-l-4 border-[#D4AF37]">
+          <div className="md-card md-card-alert mb-[var(--md-section-gap)]">
             <p className="md-secondary">
               Google Sheets is not configured (missing `VITE_SPREADSHEET_ID` / `VITE_GOOGLE_API_KEY`). Showing only
               submissions saved in this browser.
@@ -411,7 +426,7 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
           <div className="flex justify-between items-start mb-7">
             <div>
               <h1 className="md-h1 mb-2">Manager Dashboard</h1>
-              <p className="text-[12px] font-medium leading-[1.4] text-[#E0E7FF]">
+              <p className="md-header-kicker">
                 Week {collectionPeriod.weekNumbers[0]}-{collectionPeriod.weekNumbers[1]}
               </p>
             </div>
@@ -434,7 +449,7 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
               )}
             </div>
           </div>
-          <p className="text-[14px] font-medium text-[#E0E7FF]">
+          <p className="md-header-range">
             {formatDateFull(collectionPeriod.start)} - {formatDateFull(collectionPeriod.end)}
           </p>
         </div>
@@ -458,8 +473,8 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
         {/* Progress Bar */}
         <div className="md-card mb-[var(--md-section-gap)] md-animate-in" style={{ animationDelay: '0.4s' }}>
           <div className="flex justify-between items-center mb-2">
-            <p className="text-[14px] font-semibold text-[#1F2937]">Submission Progress</p>
-            <p className="text-[14px] font-semibold text-[#1F2937]">{submissionRate}%</p>
+            <p className="md-progress-title">Submission Progress</p>
+            <p className="md-progress-title">{submissionRate}%</p>
           </div>
           <div className="md-progress-track">
             <div
@@ -676,12 +691,12 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
             </form>
 
             {allowInfo && (
-              <div className="mb-4 p-3 rounded-[var(--md-radius-12)] bg-[var(--md-bg-2)] border border-[var(--md-border)] md-secondary">
+              <div className="md-info md-secondary">
                 {allowInfo}
               </div>
             )}
             {allowError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+              <div className="md-error">
                 {allowError}
               </div>
             )}
@@ -709,13 +724,13 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
                           className="md-table-row grid grid-cols-[2fr_2fr_1fr_auto] gap-4 items-start"
                         >
                           <div>
-                            <p className="font-semibold text-[#1F2937]">{row.displayName}</p>
+                            <p className="font-semibold md-text-strong">{row.displayName}</p>
                             <p className="md-small">{row.employmentType}</p>
                             {row.homeAddress && <p className="md-small">{row.homeAddress}</p>}
                           </div>
 
                           <div>
-                            <p className="text-[14px] text-[#1F2937]">{row.email}</p>
+                            <p className="text-[14px] md-text-strong">{row.email}</p>
                             {row.submitted && <p className="md-small">{row.availableDays} days available</p>}
                             {(row.homeLat != null || row.homeLng != null) && (
                               <p className="md-small">
@@ -728,20 +743,12 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
 
                           <div className="flex flex-wrap gap-2">
                             <span
-                              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[12px] font-semibold leading-[1.4] ${
-                                row.submitted
-                                  ? 'border-[rgba(16,185,129,0.35)] bg-[rgba(16,185,129,0.12)] text-[rgb(6,95,70)]'
-                                  : 'border-[var(--md-border)] bg-[var(--md-bg-2)] text-[var(--md-text-secondary)]'
-                              }`}
+                              className={`md-pill ${row.submitted ? 'md-pill-success' : ''}`}
                             >
                               {row.submitted ? 'Submitted' : 'Not submitted'}
                             </span>
                             <span
-                              className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[12px] font-semibold leading-[1.4] ${
-                                row.status === 'active'
-                                  ? 'border-[rgba(59,122,143,0.35)] bg-[rgba(59,122,143,0.10)] text-[var(--md-primary-hover)]'
-                                  : 'border-[var(--md-border)] bg-[var(--md-bg-2)] text-[var(--md-text-secondary)]'
-                              }`}
+                              className={`md-pill ${row.status === 'active' ? 'md-pill-accent' : ''}`}
                             >
                               {row.status}
                             </span>
@@ -799,9 +806,9 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
             </h2>
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {pendingRepsEffective.map(name => (
-                <div key={name} className="flex items-center gap-3 p-3 bg-[var(--md-bg-2)] rounded-[var(--md-radius-12)]">
-                  <div className="w-2 h-2 bg-[var(--md-text-secondary)] rounded-full"></div>
-                  <span className="text-[#1F2937]">{name}</span>
+                <div key={name} className="md-list-item">
+                  <div className="md-dot"></div>
+                  <span className="md-text-strong">{name}</span>
                 </div>
               ))}
             </div>
@@ -818,11 +825,11 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
               {submissions.map(sub => {
                 const availableDays = Object.values(sub.availability).filter(Boolean).length;
                 return (
-                  <div key={sub.repName} className="flex items-center justify-between gap-3 p-3 bg-[var(--md-bg-2)] rounded-[var(--md-radius-12)]">
+                  <div key={sub.repName} className="md-list-item justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-[var(--md-success)] rounded-full"></div>
+                      <div className="md-dot md-dot-success"></div>
                       <div>
-                        <p className="text-[#1F2937] font-semibold">{sub.repName}</p>
+                        <p className="md-text-strong font-semibold">{sub.repName}</p>
                         <p className="md-secondary">{availableDays} days available</p>
                       </div>
                     </div>
@@ -850,16 +857,13 @@ const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
         {/* Empty State */}
         {loading && (
           <div className="text-center py-12">
-            <div
-              className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[var(--md-border)]"
-              style={{ borderTopColor: 'var(--md-primary)' }}
-            />
+            <div className="md-spinner" />
             <p className="mt-4 md-secondary">Loading submissions...</p>
           </div>
         )}
 
         {!loading && submissions.length === 0 && (
-          <div className="text-center py-12 md-card">
+          <div className="text-center py-12 md-card md-empty-card">
             <svg
               className="w-14 h-14 mx-auto mb-4 text-[var(--md-text-secondary)]"
               viewBox="0 0 24 24"

@@ -190,10 +190,10 @@ function App() {
 
   if (!apiReady) {
     return (
-      <div className="min-h-screen bg-pc-light flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-300 border-t-pc-blue mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading...</p>
+      <div className="app-shell-loading">
+        <div className="app-loader-card">
+          <div className="app-loader-spinner" />
+          <p className="app-loader-text">Loading...</p>
         </div>
       </div>
     );
@@ -217,8 +217,10 @@ function App() {
       {effectiveView === 'rep' ? (
         <>
           {portalError && (
-            <div className="bg-white border-l-4 border-pc-blue p-4 rounded-r-lg shadow-md">
-              <p className="text-sm text-gray-700">{portalError}</p>
+            <div className="app-portal-alert-wrap">
+              <div className="app-portal-alert">
+                <p>{portalError}</p>
+              </div>
             </div>
           )}
           <RepForm
@@ -240,7 +242,7 @@ function App() {
           ) : (
             <button
               onClick={() => setShowManagerAuth(true)}
-              className="fixed bottom-6 right-6 w-14 h-14 bg-pc-blue text-white rounded-full shadow-lg hover:bg-pc-dark transition flex items-center justify-center"
+              className="app-fab"
               aria-label="Manager Access"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -251,31 +253,31 @@ function App() {
 
           {/* Manager Auth Modal */}
           {!isSupabaseConfigured() && showManagerAuth && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Manager Access</h3>
+            <div className="app-modal-backdrop">
+              <div className="app-modal">
+                <h3 className="app-modal-title">Manager Access</h3>
                 <input
                   type="password"
                   value={managerInput}
                   onChange={(e) => setManagerInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleManagerAccess()}
                   placeholder="Enter access code"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-pc-blue focus:outline-none mb-4"
+                  className="app-modal-input"
                   autoFocus
                 />
-                <div className="flex gap-3">
+                <div className="app-modal-actions">
                   <button
                     onClick={() => {
                       setShowManagerAuth(false);
                       setManagerInput('');
                     }}
-                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition"
+                    className="app-btn app-btn-neutral"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleManagerAccess}
-                    className="flex-1 px-4 py-2 bg-pc-blue text-white rounded-lg font-medium hover:bg-pc-dark transition"
+                    className="app-btn app-btn-primary"
                   >
                     Enter
                   </button>
